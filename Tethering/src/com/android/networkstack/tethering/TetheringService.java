@@ -35,8 +35,6 @@ import android.net.IIntResultListener;
 import android.net.INetworkStackConnector;
 import android.net.ITetheringConnector;
 import android.net.ITetheringEventCallback;
-import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
 import android.net.NetworkStack;
 import android.net.TetheringRequestParcel;
 import android.net.dhcp.DhcpServerCallbacks;
@@ -48,13 +46,14 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
-import android.provider.Settings;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.networkstack.apishim.SettingsShimImpl;
+import com.android.networkstack.apishim.common.SettingsShim;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -68,6 +67,7 @@ public class TetheringService extends Service {
     private static final String TAG = TetheringService.class.getSimpleName();
 
     private TetheringConnector mConnector;
+    private SettingsShim mSettingsShim;
 
     @Override
     public void onCreate() {
@@ -75,6 +75,8 @@ public class TetheringService extends Service {
         // The Tethering object needs a fully functional context to start, so this can't be done
         // in the constructor.
         mConnector = new TetheringConnector(makeTethering(deps), TetheringService.this);
+
+        mSettingsShim = SettingsShimImpl.newInstance();
     }
 
     /**
@@ -296,7 +298,7 @@ public class TetheringService extends Service {
     boolean checkAndNoteWriteSettingsOperation(@NonNull Context context, int uid,
             @NonNull String callingPackage, @Nullable String callingAttributionTag,
             boolean throwException) {
-        return Settings.checkAndNoteWriteSettingsOperation(context, uid, callingPackage,
+        return mSettingsShim.checkAndNoteWriteSettingsOperation(context, uid, callingPackage,
                 callingAttributionTag, throwException);
     }
 
@@ -306,19 +308,6 @@ public class TetheringService extends Service {
     @VisibleForTesting
     public TetheringDependencies makeTetheringDependencies() {
         return new TetheringDependencies() {
-            @Override
-            public NetworkRequest getDefaultNetworkRequest() {
-                // TODO: b/147280869, add a proper system API to replace this.
-                final NetworkRequest trackDefaultRequest = new NetworkRequest.Builder()
-                        .clearCapabilities()
-                        .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-                        .addCapability(NetworkCapabilities.NET_CAPABILITY_TRUSTED)
-                        .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                        .build();
-                return trackDefaultRequest;
-            }
-
             @Override
             public Looper getTetheringLooper() {
                 final HandlerThread tetherThread = new HandlerThread("android.tethering");

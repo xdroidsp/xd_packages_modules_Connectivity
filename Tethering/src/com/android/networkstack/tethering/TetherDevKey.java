@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package android.net;
+package com.android.networkstack.tethering;
 
-import android.net.TetheringInterface;
+import com.android.net.module.util.Struct;
+import com.android.net.module.util.Struct.Field;
+import com.android.net.module.util.Struct.Type;
 
-/**
- * Status details for tethering downstream interfaces.
- * {@hide}
- */
-parcelable TetherStatesParcel {
-    TetheringInterface[] availableList;
-    TetheringInterface[] tetheredList;
-    TetheringInterface[] localOnlyList;
-    TetheringInterface[] erroredIfaceList;
-    // List of Last error code corresponding to each errored iface in erroredIfaceList. */
-    // TODO: Improve this as b/143122247.
-    int[] lastErrorList;
+/** The key of BpfMap which is used for mapping interface index. */
+public class TetherDevKey extends Struct {
+    @Field(order = 0, type = Type.U32)
+    public final long ifIndex;  // interface index
+
+    public TetherDevKey(final long ifIndex) {
+        this.ifIndex = ifIndex;
+    }
 }
