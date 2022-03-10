@@ -25,7 +25,6 @@ import static android.net.NetworkRequest.Type.TRACK_DEFAULT;
 import static android.net.NetworkRequest.Type.TRACK_SYSTEM_DEFAULT;
 import static android.net.QosCallback.QosCallbackRegistrationException;
 
-import android.Manifest;
 import android.annotation.CallbackExecutor;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -39,12 +38,10 @@ import android.annotation.SystemService;
 import android.annotation.UserIdInt;
 import android.app.PendingIntent;
 import android.app.admin.DevicePolicyManager;
-import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.ConnectivityDiagnosticsManager.DataStallReport.DetectionMethod;
 import android.net.IpSecManager.UdpEncapsulationSocket;
 import android.net.SocketKeepalive.Callback;
@@ -2610,10 +2607,6 @@ public class ConnectivityManager {
     @RequiresPermission(anyOf = {android.Manifest.permission.TETHER_PRIVILEGED,
             android.Manifest.permission.WRITE_SETTINGS})
     public boolean isTetheringSupported() {
-        if (GmsCompat.isEnabled()) {
-            return false;
-        }
-
         return getTetheringManager().isTetheringSupported();
     }
 
@@ -3148,14 +3141,6 @@ public class ConnectivityManager {
         printStackTrace();
         try {
             mService.reportNetworkConnectivity(network, hasConnectivity);
-        } catch (SecurityException e) {
-            // ConnectivityService enforces this by throwing an unexpected SecurityException,
-            // which puts GMS into a crash loop. Also useful for other apps that don't expect that
-            // INTERNET permission might get revoked.
-            if (mContext.checkSelfPermission(Manifest.permission.INTERNET) ==
-                    PackageManager.PERMISSION_GRANTED) {
-                throw e;
-            }
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
